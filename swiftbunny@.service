@@ -1,0 +1,19 @@
+[Unit]
+Description=Drain RabbitMQ and publish to OpenStack Swift
+After=network.target
+# Depending on which RabbitMQ you need to reach, alter/add this
+# in /etc/systemd/system/swiftbunny@.service.d/override.conf:
+#   After=docker@rabbitmq-server.service
+
+[Service]
+Environment=PYTHONPATH=/usr/local/bin
+# Config will contain secret key. Don't just leave it anywhere.
+ExecStart=/usr/bin/python3 -m swiftbunny -c /etc/swiftbunny.ini %i
+# TODO: implement restart on failure (in case RabbitMQ is down for a while)
+#KillMode=process
+#Restart=on-failure
+#RestartPreventExitStatus=255
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
