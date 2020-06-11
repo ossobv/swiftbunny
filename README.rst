@@ -64,3 +64,6 @@ TODO
 * Add sample ini-file.
 
 * Fix suffix (split node-X and keyname).
+
+* Add Immutable middleware to Swift so we can make it harder to
+  accidentally delete stored logs.
