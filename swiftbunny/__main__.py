@@ -55,7 +55,7 @@ def _periodic_reporter(signum, frame):
 
 def setup_periodic_report():
     global periodic_reporter
-    periodic_reporter = None  # noqa
+    periodic_reporter = None
     signal.signal(signal.SIGALRM, _periodic_reporter)
     signal.alarm(60)
 
