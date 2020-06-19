@@ -38,10 +38,12 @@ from keystone_light import (
 from .osso_ez_gpg import DeflatePipe, InflatePipe, DecryptPipe, EncryptPipe
 try:
     from .osso_ez_rmq import BaseConsumer, rmq_uri
-except ImportError:
-    class BaseConsumer:
-        def __init__(self, *args, **kwargs):
-            raise ImportError('no RabbitMQ dependencies available')
+except ImportError as e:
+    class _ErrCls:  # noqa
+        _errstr = 'laoding RabbitMQ dependencies failed: {}'.format(e)
+        def __init__(self, *args, **kwargs):  # noqa
+            raise ImportError(self._errstr)
+    BaseConsumer = rmq_uri = _ErrCls  # noqa
 
 log = logging.getLogger('swiftbunny')
 
