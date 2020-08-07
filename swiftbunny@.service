@@ -1,5 +1,5 @@
 [Unit]
-Description=Drain RabbitMQ and publish to OpenStack Swift
+Description=Drain RabbitMQ and publish to OpenStack Swift (%i)
 After=network.target
 # Depending on which RabbitMQ you need to reach, alter/add this
 # in /etc/systemd/system/swiftbunny@.service.d/override.conf:
