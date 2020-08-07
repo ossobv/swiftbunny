@@ -30,7 +30,6 @@ import sys
 
 from datetime import datetime, timedelta
 from subprocess import check_call
-from tempfile import TemporaryFile
 
 from keystone_light import (
     Cloud, DirectConfig, ChunkIteratorIOBaseWrapper, SwiftContainerGetPipe)
@@ -517,35 +516,45 @@ class FlatMessagesUploader:
             'Downloading %s from %s for verification', self._remote_name,
             container.name)
 
+        self._source.seek(0, os.SEEK_END)
+        size = self._source.tell()
         self._source.seek(0, os.SEEK_SET)  # rewind
-        with TemporaryFile(mode='w+b') as tempfp, \
-                SwiftContainerGetPipe(container, self._remote_name) as pipe1, \
+        with SwiftContainerGetPipe(container, self._remote_name) as pipe1, \
                 DecryptPipe(
                     pipe1.stdout, password=self._passphrase) as pipe2, \
-                InflatePipe(pipe2.stdout, tempfp) as pipe3:
-            pipe3.communicate()
-            pipe2.communicate()
-            pipe1.communicate()
-            log.info(
-                'Downloaded %s from %s for verification', self._remote_name,
-                container.name)
-
-            # Compare files
-            self._source.seek(0, os.SEEK_SET)
-            tempfp.seek(0, os.SEEK_SET)
-            buf = buf2 = True
-            while buf and buf2:
-                buf = self._source.read(8192)
-                buf2 = tempfp.read(8192)
+                InflatePipe(pipe2.stdout) as pipe3:
+            try:
+                # Compare block by block. Assume that the inflate-pipe
+                # does not send stuff to stderr (which we'd need to
+                # read so it doesn't block).
+                pos = 0
+                buf = buf2 = True
+                while buf and buf2:
+                    buf = self._source.read(8192)   # ends with b''
+                    buf2 = pipe3.stdout.read(8192)  # also ends with b''
+                    if buf != buf2:
+                        break  # break before incrementing pos
+                    pos += len(buf)  # +8192, +8192, +123, +0
                 if buf != buf2:
-                    break
-            if buf != buf2:
-                log.error(
-                    'Verification failed at bytes %d/%d: expected %r got %r',
-                    self._source.tell(), tempfp.tell(), buf, buf2)
-                raise StateError('Verification failed')
+                    log.error(
+                        'Verification of %s failed after byte %d (+8192): '
+                        'expected %r got %r',
+                        self._remote_name, pos, buf, buf2)
+                    pipe3.kill()  # this should kill off all pipes
+                    raise StateError('Verification failed')
+                assert pos == size, 'source {}, remote {}'.format(size, pos)
+            finally:
+                # Cleanup
+                # FIXME: when pipe3.kill() is called, this will still
+                # yield garbage and do an AssertionError in
+                # communicate(). Perhaps check for is_killed there?
+                pipe3.communicate()
+                pipe2.communicate()
+                pipe1.communicate()
+
             log.info(
-                'Verified file %s on %s', self._remote_name, container.name)
+                'Verified file %s (%d decoded bytes) on %s',
+                self._remote_name, size, container.name)
 
     def free(self):
         """
