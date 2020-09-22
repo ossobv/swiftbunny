@@ -5,15 +5,23 @@ After=network.target
 # in /etc/systemd/system/swiftbunny@.service.d/override.conf:
 #   After=docker@rabbitmq-server.service
 
+# Allow at most 5 restarts in 10 minutes. After that, we go into failed state.
+# Check RestartSec= below: StartLimitBurst*RestartSec must be lower than
+# StartLimitIntervalSec. Otherwise this won't work.
+# After 5th failure, we should get notified by either psdiff(1) or the
+# monitoring of `systemctl list-units --failed`
+StartLimitIntervalSec=10m
+StartLimitBurst=5
+
 [Service]
 Environment=PYTHONPATH=/usr/local/bin
 # Config will contain secret key. Don't just leave it anywhere.
 ExecStart=/usr/bin/python3 -m swiftbunny -c /etc/swiftbunny.ini %i
-# TODO: implement restart on failure (in case RabbitMQ is down for a while)
-#KillMode=process
-#Restart=on-failure
-#RestartPreventExitStatus=255
 Type=simple
+KillMode=mixed
+# Restart after 1m30 on failure (rabbitmq not up yet?)
+Restart=on-failure
+RestartSec=1m 30s
 
 [Install]
 WantedBy=multi-user.target
