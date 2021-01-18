@@ -237,6 +237,13 @@ class FlatMessages:
         We only use fallback_min, if there is no data in the scratchpad. If
         there already was data, we'll prefer the min time from there.
         """
+        # Allow setting SWIFTBUNNY_FLUSH and SWIFTBUNNY_FSYNC envvars for
+        # flush/sync to disk.
+        self._swiftbunny_fsync = (
+            os.environ.get('SWIFTBUNNY_FSYNC', '') not in ('', '0'))
+        self._swiftbunny_flush = self._swiftbunny_fsync or (
+            os.environ.get('SWIFTBUNNY_FLUSH', '') not in ('', '0'))
+
         # path_to_scratchpad = os.path.dirname(__file__)
         # scratchpad_filename = os.path.join(path_to_scratchpad, 'scratchpad')
         path_to_scratchpad = settings.SCRATCHPAD_DIR
@@ -406,7 +413,17 @@ class FlatMessages:
         """
         self._up_date(message.time)  # before write() because of assertions
         self._fp.write(message.as_flat_message().encode('utf-8'))
-        # #self._fp.flush()  # XXX: needed? probably safer for the RMQ-consumer
+
+        if self._swiftbunny_flush:
+            # If you want to see what's going on, it's nice if stuff is flushed
+            # to the OS immediately.
+            self._fp.flush()
+            if self._swiftbunny_fsync:
+                # If you want extra safety against crashes, ask the OS to flush
+                # _every_ _new_ _line_ to disk. This might slow things down (a
+                # lot).
+                os.fsync(self._fp.fileno())
+
         self._count += 1
 
     def formatted_times(self):

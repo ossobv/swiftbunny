@@ -17,6 +17,8 @@ StartLimitBurst=5
 # Allow changing these in a custom systemd service override.
 Environment=PYTHONPATH=/usr/local/bin
 Environment=CONFIGFILE=/etc/swiftbunny.ini
+#Environment=SWIFTBUNNY_FLUSH=1
+#Environment=SWIFTBUNNY_FSYNC=0
 # Config will contain secret key. Don't just leave it anywhere.
 ExecStart=/usr/bin/python3 -m swiftbunny -c $CONFIGFILE %i --debug
 # Fix the SYSLOG_IDENTIFIER so it doesn't say "python3[PID]".
