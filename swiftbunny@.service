@@ -17,6 +17,8 @@ StartLimitBurst=5
 Environment=PYTHONPATH=/usr/local/bin
 # Config will contain secret key. Don't just leave it anywhere.
 ExecStart=/usr/bin/python3 -m swiftbunny -c /etc/swiftbunny.ini %i
+# Fix the SYSLOG_IDENTIFIER so it doesn't say "python3[PID]".
+SyslogIdentifier=swiftbunny@%i
 Type=simple
 KillMode=mixed
 # Restart after 1m30 on failure (rabbitmq not up yet?)
