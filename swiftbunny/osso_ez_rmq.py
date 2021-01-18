@@ -77,7 +77,11 @@ def rmq_connect(rmqc):
 
     connection = pika.BlockingConnection(params)
     log.info('Connected to RMQ %s:%s', rmqc.host, rmqc.port)
-    return connection.channel()
+    channel = connection.channel()
+    # Set prefetch to non-zero, because the default of 0 means "give me 800.000
+    # messages if you have it!" :unamused:
+    channel.basic_qos(prefetch_count=400)
+    return channel
 
 
 def rmq_init_consumer(channel, rmqc_queue, on_message=None):
