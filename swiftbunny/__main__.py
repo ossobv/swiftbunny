@@ -705,17 +705,22 @@ class _ElasticSearchJsonDumpProducer:
             # #filename = '/tmp/{}'.format(os.path.basename(filename)) # ?
             with open(filename + '.unsorted', 'wb') as outfp:
                 it = iter(fp)
-                line = next(it)
-                m = GraylogElasticMessage.parse_binary(line)
-                last_date = m.time.date()
-                outfp.write(m.as_flat_message().encode('utf-8'))
-                count, wrong_date = 1, 0
-                for line in it:
+                try:
+                    line = next(it)
+                except StopIteration:
+                    # 0 byte file? Ok sure.
+                    count, wrong_date = 0, 0
+                else:
                     m = GraylogElasticMessage.parse_binary(line)
-                    if last_date != m.time.date():
-                        wrong_date += 1
-                    count += 1
+                    last_date = m.time.date()
                     outfp.write(m.as_flat_message().encode('utf-8'))
+                    count, wrong_date = 1, 0
+                    for line in it:
+                        m = GraylogElasticMessage.parse_binary(line)
+                        if last_date != m.time.date():
+                            wrong_date += 1
+                        count += 1
+                        outfp.write(m.as_flat_message().encode('utf-8'))
 
         log.info('Found %d lines, %d with wrong date', count, wrong_date)
         log.info('Sorting file %s.unsorted', filename)
