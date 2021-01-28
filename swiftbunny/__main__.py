@@ -234,7 +234,7 @@ class FlatMessages:
         For messages _after_, can_add() will return false.
         For messages _before_, you'll get an exception.
 
-        We only use fallback_min, if there is no data in the scratchpad. If
+        We only use fallback_min if there is no data in the scratchpad. If
         there already was data, we'll prefer the min time from there.
         """
         # Allow setting SWIFTBUNNY_FLUSH and SWIFTBUNNY_FSYNC envvars for
@@ -687,10 +687,11 @@ class _ElasticSearchJsonDumpProducer:
                     self.on_message(line[29:])
             os.unlink(sorted_filename)
 
-            # Also, we're done with the source.
+            # Also, we're done with the source. Remove?
             # XXX: we should do this automatically; but we need to be sure that
             # we're not in the middle of a file that's still being written to
-            log.warn('Please do: rm %s', filename)
+            log.warn('Renaming: %s', filename)
+            os.rename(filename, '{}.processed'.format(filename))
 
         # TODO: flush the last one!
         # TEMP: disabled because we always expect one more dump; and we don't
@@ -722,7 +723,12 @@ class _ElasticSearchJsonDumpProducer:
                         count += 1
                         outfp.write(m.as_flat_message().encode('utf-8'))
 
-        log.info('Found %d lines, %d with wrong date', count, wrong_date)
+        # To make matters worse: this wrong_date only says something about the
+        # input. If there was an issue and we're fed old files, this part will
+        # not detect that they're old. And the consumer -- which may be
+        # expecting newer logs -- will not know that these are "old files". The
+        # system is designed to cope with incidental old records after all.
+        log.info('Found %d lines, %d with different date', count, wrong_date)
         log.info('Sorting file %s.unsorted', filename)
         assert '\\' not in filename and "'" not in filename, filename
         check_call(
