@@ -56,8 +56,6 @@ So, if you're looking for old records, you can:
 TODO
 ----
 
-* setup.py
-
 * Add commands, so we can do 'ls' and 'get' and 'post' on the archived files.
   (Use argparse.)
 

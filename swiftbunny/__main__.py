@@ -794,7 +794,7 @@ def get_consumer(uri):
         assert False, uri
 
 
-if __name__ == '__main__':
+def main():
     import configparser
     import functools
 
@@ -831,5 +831,9 @@ if __name__ == '__main__':
     consumer_class = get_consumer(settings.CONSUME_URI)
     consumer = consumer_class(settings.CONSUME_URI)
     consumer.run_for_as_long_as_necessary()
+
+
+if __name__ == '__main__':
+    main()
 
 # vim: set ts=8 sw=4 sts=4 et ai:
