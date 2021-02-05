@@ -795,6 +795,8 @@ def get_consumer(uri):
 
 
 def main():
+    global settings
+
     import configparser
     import functools
 
