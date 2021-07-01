@@ -304,10 +304,15 @@ class FlatMessages:
                 self._up_date(time)
 
             for line in it:
+                # Set accept_max_overrun so allow us to overflow the period
+                # size by a lot, this once. This makes sense when we just
+                # changed from 86400 period size to 3600.
                 time = BaseMessage.parse_flatmessage_time(line)
-
                 self._count += 1
-                self._up_date(time)
+                self._up_date(time, accept_max_overrun=True)
+
+                # Do check that we're not underflowing the data by more than
+                # one period (let's say 3600 secs).
                 if ((self._expected_min - self._date_min).total_seconds()
                         > self._expected_period):
                     # If the min_time is larger than the period we may be
@@ -319,14 +324,31 @@ class FlatMessages:
             self._fp.seek(0, os.SEEK_END)
             log.info('Scratchpad caught up')
 
-    def _up_date(self, time):
-        "Update _date_min and _date_max"
+    def _up_date(self, time, accept_max_overrun=False):
+        """
+        Update _date_min and _date_max.
+
+        This is needed so we can create the informational filename which includes
+        the min and max limits of included values.
+
+        Checks _expected_max (which is expected_start_date + expected_period)
+        unless accept_max_overrun is True. For regular runs, we never expect a
+        value above max. But whe restarting, we might find an unexpected value
+        in the scratch pad. This might happen when we've decreased the
+        expected_period size.
+        """
         if self._date_min is None:
             assert self._date_max is None
             self._date_min = self._date_max = time
         elif time > self._date_max:
-            # We may want to relax this restriction..
-            assert time < self._expected_max, (self._expected_max, time)
+            if accept_max_overrun:
+                # We expect only records between, let's say, [00:00, 01:00). But
+                # if we previously read a day worth of records -- now changed
+                # to 3600 secs -- we might be looking at [00:00, 15:00+).
+                # Accept a big overrun this time.
+                pass
+            else:
+                assert time < self._expected_max, (self._expected_max, time)
             self._date_max = time
         elif time < self._date_min:
             self._date_min = time
