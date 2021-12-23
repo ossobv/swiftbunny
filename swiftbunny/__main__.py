@@ -32,7 +32,8 @@ from datetime import datetime, timedelta
 from subprocess import check_call
 
 from keystone_light import (
-    Cloud, DirectConfig, ChunkIteratorIOBaseWrapper, SwiftContainerGetPipe)
+    Cloud, DirectConfig, ChunkIteratorIOBaseWrapper,
+    SwiftContainerGetPipe, SwiftFileExistsError)
 
 from .osso_ez_gpg import DeflatePipe, InflatePipe, DecryptPipe, EncryptPipe
 try:
@@ -526,7 +527,21 @@ class FlatMessagesUploader:
             key=keyid, ext=ext)
         return filename
 
-    def upload(self):
+    def upload_and_verify(self):
+        try:
+            self._upload()
+        except SwiftFileExistsError:
+            # If the file existed already, we _must_ verify the upload, because
+            # we don't know if they're equal.
+            # (If the verification failed here, we _could_ attempt to reupload
+            # with a different name. Hope this won't be necessary.)
+            self._verify_upload()
+        else:
+            # In other cases, we also verify. This is nice, but not strictly
+            # necessary.
+            self._verify_upload()
+
+    def _upload(self):
         """
         Upload the file to Swift, in encrypted form
         """
@@ -546,7 +561,7 @@ class FlatMessagesUploader:
                 'Uploaded %s byte source to %s: %s', self._source_len,
                 container.name, self._remote_name)
 
-    def verify_upload(self):
+    def _verify_upload(self):
         """
         Download uploaded file to a temp location, and compare to source
         """
@@ -653,8 +668,7 @@ class RmqFluentdConsumer(BaseConsumer):
                 self._flatmessages.discard_file()
             else:
                 uploader = FlatMessagesUploader(self._flatmessages)
-                uploader.upload()
-                uploader.verify_upload()  # NOTE: not strictly necessary..
+                uploader.upload_and_verify()
                 uploader.free()
                 uploader = None
 
@@ -798,8 +812,7 @@ class ElasticSearchJsonDumpConsumer(_ElasticSearchJsonDumpProducer):
             self._flatmessages.discard_file()
         else:
             uploader = FlatMessagesUploader(self._flatmessages)
-            uploader.upload()
-            uploader.verify_upload()  # NOTE: not strictly necessary..
+            uploader.upload_and_verify()
             uploader.free()
             uploader = None
 
