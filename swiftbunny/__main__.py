@@ -328,8 +328,8 @@ class FlatMessages:
         """
         Update _date_min and _date_max.
 
-        This is needed so we can create the informational filename which includes
-        the min and max limits of included values.
+        This is needed so we can create the informational filename which
+        includes the min and max limits of included values.
 
         Checks _expected_max (which is expected_start_date + expected_period)
         unless accept_max_overrun is True. For regular runs, we never expect a
@@ -342,10 +342,10 @@ class FlatMessages:
             self._date_min = self._date_max = time
         elif time > self._date_max:
             if accept_max_overrun:
-                # We expect only records between, let's say, [00:00, 01:00). But
-                # if we previously read a day worth of records -- now changed
-                # to 3600 secs -- we might be looking at [00:00, 15:00+).
-                # Accept a big overrun this time.
+                # We expect only records between, let's say, [00:00, 01:00).
+                # But if we previously read a day worth of records -- now
+                # changed to 3600 secs -- we might be looking at [00:00,
+                # 15:00+). Accept a big overrun this time.
                 pass
             else:
                 assert time < self._expected_max, (self._expected_max, time)
