@@ -127,27 +127,45 @@ class BaseMessage:
     def parse_binary(cls, body):
         try:
             tbody = body.decode('utf-8')
-        except UnicodeDecodeError:
+        except UnicodeDecodeError as exc:
             log.exception('while parsing {}'.format(body))
             if cls.STRICT:
+                filename = '/tmp/swiftbunny-broken.binbody.broken'
+                with open(f'{filename}.new', 'wb') as fp:
+                    fp.write((str(exc) + '\n').encode('utf-8'))
+                    os.fchmod(fp.fileno(), 0o600)
+                    fp.write(body)
+                os.rename(f'{filename}.new', filename)
                 raise
             obody = {'binaryblob': str(body)}  # 'b"some binary blob"'
             timestamp = datetime.utcnow()
         else:
             try:
                 obody = json.loads(tbody)
-            except ValueError:
+            except ValueError as exc:
                 log.exception('while parsing {}'.format(body))
                 if cls.STRICT:
+                    filename = '/tmp/swiftbunny-broken.txtbody.broken'
+                    with open(f'{filename}.new', 'w') as fp:
+                        fp.write(str(exc) + '\n')
+                        os.fchmod(fp.fileno(), 0o600)
+                        fp.write(tbody)
+                    os.rename(f'{filename}.new', filename)
                     raise
                 obody = {'textblob': tbody}  # "some readable blob"
                 timestamp = datetime.utcnow()
             else:
                 try:
                     timestamp = cls.parse_timestamp(obody)
-                except ValueError:
+                except ValueError as exc:
                     log.exception('while parsing {}'.format(body))
                     if cls.STRICT:
+                        filename = '/tmp/swiftbunny-broken.timebody.broken'
+                        with open(f'{filename}.new', 'w') as fp:
+                            fp.write(str(exc) + '\n')
+                            os.fchmod(fp.fileno(), 0o600)
+                            fp.write(tbody)  # obody is not a string
+                        os.rename(f'{filename}.new', filename)
                         raise
                     timestamp = datetime.utcnow()
 
