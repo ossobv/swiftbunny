@@ -407,7 +407,7 @@ class FlatMessages:
             else:
                 speed = '{:.1f}/h'.format(c_per_s * 3600)
         else:
-            speed = '???/s'
+            speed = '---/s'
 
         log.debug(
             'Populating %s+%s: %d messages (%s)', self._expected_min,
