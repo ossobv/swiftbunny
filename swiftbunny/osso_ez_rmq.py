@@ -80,7 +80,7 @@ def rmq_connect(rmqc):
     channel = connection.channel()
     # Set prefetch to non-zero, because the default of 0 means "give me 800.000
     # messages if you have it!" :unamused:
-    channel.basic_qos(prefetch_count=400)
+    channel.basic_qos(prefetch_count=2000)
     return channel
 
 
