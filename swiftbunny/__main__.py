@@ -337,7 +337,12 @@ class FlatMessages:
                     # If the min_time is larger than the period we may be
                     # overstretching things.
                     raise StateError(
-                        'More than period min_time in scratch pad; please fix')
+                        'More than period min_time in scratch pad '
+                        '(line={}, min="{}", period={}, found_min="{}")'
+                        .format(
+                            self._count,
+                            self._expected_min, self._expected_period,
+                            self._date_min))
 
             # Should be at end now.
             self._fp.seek(0, os.SEEK_END)
