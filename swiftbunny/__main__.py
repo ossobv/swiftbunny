@@ -864,7 +864,7 @@ def main():
     section_name = sys.argv[3]  # [ini_section]
     config = configparser.ConfigParser(interpolation=None)
     with open(config_file, 'r') as fp:
-        config.readfp(fp)
+        config.read_file(fp)
     config_get = functools.partial(config.get, section_name)
 
     class Settings:
