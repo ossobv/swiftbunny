@@ -5,13 +5,13 @@ After=network.target
 # in /etc/systemd/system/swiftbunny@.service.d/override.conf:
 #   After=docker@rabbitmq-server.service
 
-# Allow at most 5 restarts in 10 minutes. After that, we go into failed state.
+# Allow at most 120 restarts in 3+ hours. After that, we go into failed state.
 # Check RestartSec= below: StartLimitBurst*RestartSec must be lower than
 # StartLimitIntervalSec. Otherwise this won't work.
 # After 5th failure, we should get notified by either psdiff(1) or the
 # monitoring of `systemctl list-units --failed`
-StartLimitIntervalSec=10m
-StartLimitBurst=5
+StartLimitIntervalSec=3h 20min
+StartLimitBurst=120
 
 [Service]
 # Allow changing these in a custom systemd service override.
@@ -27,7 +27,7 @@ Type=simple
 KillMode=mixed
 # Restart after 1m30 on failure (rabbitmq not up yet?)
 Restart=on-failure
-RestartSec=1m 30s
+RestartSec=1min 30s
 
 [Install]
 WantedBy=multi-user.target
