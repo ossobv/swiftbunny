@@ -85,7 +85,14 @@ def rmq_connect(rmqc):
 
 
 def rmq_init_consumer(channel, rmqc_queue, on_message=None):
-    channel.basic_consume(on_message, rmqc_queue, no_ack=False)
+    try:
+        # pika>=1
+        channel.basic_consume(
+            queue=rmqc_queue, on_message_callback=on_message,
+            auto_ack=False)
+    except TypeError:
+        # pika<1
+        channel.basic_consume(on_message, rmqc_queue, no_ack=False)
 
 
 class _BaseRmqChannel(object):
