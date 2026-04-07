@@ -1,5 +1,5 @@
 # Mandatory Python dependencies:
-keystone-light
+keystone-light>=1.4,<2
 
 # Optional Python dependencies:
 #pika   # for reading from RabbitMQ

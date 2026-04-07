@@ -531,7 +531,8 @@ class FlatMessagesUploader:
 
             swift = project.get_swift()
             container = swift.get_container(container_name)
-            container.ensure_exists()
+            container.ensure_exists(
+                storage_policy=settings.SWIFT_CONTAINER_POLICY)
             self._get_swift_container[container_name] = container
 
         return container
@@ -876,6 +877,7 @@ def main():
         KEYSTONE_URI = config_get('KEYSTONE_URI')
         SWIFT_PROJECT = config_get('SWIFT_PROJECT')
         SWIFT_CONTAINER = config_get('SWIFT_CONTAINER')
+        SWIFT_CONTAINER_POLICY = config_get('SWIFT_CONTAINER_POLICY')
         SWIFT_FILE = config_get('SWIFT_FILE', fallback=section_name)
         PERIOD = int(config_get('PERIOD') or 3600)
 
